@@ -49,21 +49,47 @@ function printIssueIdeas(): void {
 function printIssueFit(): void {
   const skill = readFlag("--skill") ?? "docs";
   const timeBudget = readFlag("--time") ?? "30m";
+  
+  // Define accepted values
+  const acceptedSkills = ["html-css", "javascript", "python", "docs", "testing", "git"];
+  const acceptedTimes = ["15m", "30m", "1h", "2h"];
+  
+  // Validate skill
+  if (skill !== "docs" && !acceptedSkills.includes(skill)) {
+    console.log("❌ Invalid skill value\n");
+    console.log(`✅ Accepted skills: ${acceptedSkills.join(", ")}`);
+    console.log(`📌 Example: fit --skill javascript --time 30m`);
+    console.log(`💡 Tip: Use "docs" as a fallback for documentation tasks\n`);
+    return;
+  }
+  
+  // Validate time
+  if (!acceptedTimes.includes(timeBudget)) {
+    console.log("❌ Invalid time value\n");
+    console.log(`✅ Accepted times: ${acceptedTimes.join(", ")}`);
+    console.log(`📌 Example: fit --skill docs --time 1h`);
+    console.log(`💡 Tip: Choose a time that matches your availability\n`);
+    return;
+  }
+  
   const fit = findIssueFit(skill, timeBudget);
 
-  console.log("First Issue Fit Finder\n");
-  console.log(`Best path: ${fit.title}`);
-  console.log(`Skill: ${fit.skill}`);
-  console.log(`Time: ${fit.timeBudget}`);
-  console.log(`Why it fits: ${fit.whyItFits}`);
-  console.log(`First command: ${fit.firstCommand}`);
-  console.log("\nFind an issue to work on:");
+  console.log("🔍 First Issue Fit Finder\n");
+  console.log(`📌 Best path: ${fit.title}`);
+  console.log(`💪 Skill: ${fit.skill}`);
+  console.log(`⏱️  Time: ${fit.timeBudget}`);
+  console.log(`💡 Why it fits: ${fit.whyItFits}`);
+  console.log(`🚀 First command: ${fit.firstCommand}`);
+  console.log("\n📋 Accepted values:");
+  console.log(`   Skills: ${acceptedSkills.join(", ")}`);
+  console.log(`   Times: ${acceptedTimes.join(", ")}`);
+  console.log("\n🔗 Find an issue to work on:");
   console.log(`→ Copy this URL into your browser: ${fit.issueSearchUrl}`);
-  console.log("\nProof checklist:");
+  console.log("\n✅ Proof checklist:");
   for (const item of fit.proofChecklist) {
     console.log(`- ${item}`);
   }
-  console.log("\nComment to paste:");
+  console.log("\n📝 Comment to paste:");
   console.log(fit.commentTemplate);
 }
 
@@ -134,8 +160,12 @@ function main(): void {
     console.log("  oss-lab profiles");
     console.log("  oss-lab fit --skill docs --time 30m");
     console.log("    Skills: html-css, javascript, python, docs, testing, git");
-    console.log("    Time: 15m, 30m, 1h");
+    console.log("    Time: 15m, 30m, 1h, 2h");
     console.log("  oss-lab next --level second-pr");
+    console.log("\nExamples:");
+    console.log("  oss-lab fit --skill javascript --time 1h");
+    console.log("  oss-lab fit --skill docs --time 30m");
+    console.log("  oss-lab fit --skill python --time 2h");
     return;
   }
 
