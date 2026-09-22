@@ -1,3 +1,8 @@
+import {
+  topContributorsByMergedPRs,
+  type MergedPullRequest,
+} from "../src/plugins/leaderboard.js";
+
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
@@ -268,3 +273,69 @@ console.log = originalLog;
 assert.equal(capturedTimelineOutput, "Not implemented yet.");
 
 console.log("Smoke tests passed.");
+
+// Leaderboard: topContributorsByMergedPRs is the main exported behavior and
+// is pure, so we can exercise it without touching the filesystem or network.
+const LEADERBOARD_NOW = new Date("2024-06-15T00:00:00Z");
+
+function prDaysAgo(username: string, days: number): MergedPullRequest {
+  const d = new Date(LEADERBOARD_NOW);
+  d.setDate(d.getDate() - days);
+  return { username, mergedAt: d };
+}
+
+// Ranks contributors by merged-PR count within the window.
+const ranked = topContributorsByMergedPRs(
+  [
+    prDaysAgo("alice", 1),
+    prDaysAgo("alice", 5),
+    prDaysAgo("alice", 10),
+    prDaysAgo("bob", 2),
+    prDaysAgo("bob", 3),
+    prDaysAgo("carol", 7),
+  ],
+  LEADERBOARD_NOW
+);
+
+assert.deepEqual(ranked, [
+  { username: "alice", mergedPullRequests: 3 },
+  { username: "bob", mergedPullRequests: 2 },
+  { username: "carol", mergedPullRequests: 1 },
+]);
+
+// PRs older than the 30-day window are ignored.
+const filtered = topContributorsByMergedPRs(
+  [prDaysAgo("alice", 5), prDaysAgo("alice", 31), prDaysAgo("bob", 40)],
+  LEADERBOARD_NOW
+);
+
+assert.deepEqual(filtered, [{ username: "alice", mergedPullRequests: 1 }]);
+
+// Ties are broken alphabetically by username.
+const tied = topContributorsByMergedPRs(
+  [prDaysAgo("zoe", 1), prDaysAgo("adam", 2), prDaysAgo("mike", 3)],
+  LEADERBOARD_NOW
+);
+
+assert.deepEqual(
+  tied.map((entry) => entry.username),
+  ["adam", "mike", "zoe"]
+);
+
+// The limit parameter caps how many contributors are returned.
+const limited = topContributorsByMergedPRs(
+  [prDaysAgo("alice", 1), prDaysAgo("bob", 1), prDaysAgo("carol", 1)],
+  LEADERBOARD_NOW,
+  30,
+  2
+);
+
+assert.equal(limited.length, 2);
+
+// An empty window yields no ranks.
+const nothingInWindow = topContributorsByMergedPRs(
+  [prDaysAgo("alice", 60)],
+  LEADERBOARD_NOW
+);
+
+assert.deepEqual(nothingInWindow, []);
